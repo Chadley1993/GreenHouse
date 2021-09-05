@@ -5,10 +5,10 @@ import numpy as np
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 from dash.dependencies import Output, Input
+from drivers import bmp280
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 
@@ -17,8 +17,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
     Input('test-iterator', "n_intervals")
 )
 def live_feed(n_intervals):
-    # temperature = bmp280.get_temperature()
-    temperature = np.random.random() * np.random.randint(0, 31)
+    temperature = bmp280.get_temperature()
     return "{:.1f}°C".format(temperature)
 
 
