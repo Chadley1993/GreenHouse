@@ -133,9 +133,8 @@ def run_data_acquisition():
 
 def run_server():
     global data_packet
-    client, addr = server_socket.accept()
     while True:
-        client.recv(2)
+        client, addr = server_socket.accept()
         serialized_dp = pickle.dumps(data_packet)
         client.send(serialized_dp)
         client.close()
