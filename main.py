@@ -59,6 +59,7 @@ app.layout = html.Div(children=[
         id="temperature-card"
     ),
     html.Div(dcc.Graph(figure=get_temp_plot())),
+    html.A("file:///home/chadley/git/GreenHouse/temperature.db"),
     dcc.Interval(id='test-iterator', interval=1000 * 5)
 ])
 
