@@ -112,7 +112,7 @@ def live_feed(n_intervals):
     s.close()
     signed_obj: SignedObject = pickle.loads(byte_stream)
     s_obj: SensorData = signed_obj.get_og_object()
-    return s_obj.get_outside_temp(), s_obj.get_outside_humidity(), s_obj.get_inside_temp(), s_obj.get_inside_humidity()
+    return s_obj.get_inside_temp(), s_obj.get_inside_humidity(), s_obj.get_outside_temp(), s_obj.get_outside_humidity()
 
 
 addr_book = get_address_book()
