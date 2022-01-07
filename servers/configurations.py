@@ -1,5 +1,6 @@
 import json
 
+
 class SSSConstants:
     port = 8100
     num_expect_conn = 2
