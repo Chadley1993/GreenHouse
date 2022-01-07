@@ -1,7 +1,6 @@
 import os
 import socket
 import pickle
-import sys
 import time
 import numpy as np
 import yaml
@@ -20,7 +19,7 @@ import adafruit_dht
 
 def get_pk():
     f = open("rpi-data-server.pem", 'rb')
-    pk = serialization.load_pem_private_key(f.read(), password=bytes(sys.argv[1], 'utf-8'))
+    pk = serialization.load_pem_private_key(f.read(), password=bytes(os.environ['RPI_SERVER_PWD'], 'utf-8'))
     f.close()
     return pk
 
@@ -136,7 +135,7 @@ def run_server():
     global data_packet
     client, addr = server_socket.accept()
     while True:
-        client.recv(1024)
+        client.recv(2)
         serialized_dp = pickle.dumps(data_packet)
         client.send(serialized_dp)
 
@@ -151,8 +150,8 @@ server_socket.listen(SSSConstants.num_expect_conn)
 private_key = get_pk()
 address_book = get_address_book()
 
-outside_dht_sensor = adafruit_dht.DHT11(17)
-inside_dht_sensor = adafruit_dht.DHT11(18)
+inside_dht_sensor = adafruit_dht.DHT11(17)
+outside_dht_sensor = adafruit_dht.DHT11(18)
 
 db_freq = 15 * 60
 sample_freq = 6
