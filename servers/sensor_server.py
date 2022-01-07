@@ -138,6 +138,7 @@ def run_server():
         client.recv(2)
         serialized_dp = pickle.dumps(data_packet)
         client.send(serialized_dp)
+        client.close()
 
 
 log_fmt = '%(asctime)s : %(levelname)s - %(message)s'
