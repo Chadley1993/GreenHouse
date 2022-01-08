@@ -46,32 +46,51 @@ def get_sensor_readings():
     ts = time.ctime()
     payload.set_timestamp(ts)
     try:
-        outside_temp = outside_dht_sensor.temperature
-        previous_ot = outside_temp
-    except RuntimeError:
-        outside_temp = previous_ot
-    payload.set_outside_temp(outside_temp)
+        try:
+            outside_temp = outside_dht_sensor.temperature
+            previous_ot = outside_temp
+        except RuntimeError:
+            outside_temp = previous_ot
+            logging.warning("Outside temp sensor glitch")
+        except OverflowError as ofe:
+            outside_temp = previous_ot
+            logging.error("Outside temp sensor failed - " + str(ofe))
+        payload.set_outside_temp(outside_temp)
 
-    try:
-        outside_humidity = outside_dht_sensor.humidity
-        previous_oh = outside_humidity
-    except RuntimeError:
-        outside_humidity = previous_oh
-    payload.set_outside_humidity(outside_humidity)
+        try:
+            outside_humidity = outside_dht_sensor.humidity
+            previous_oh = outside_humidity
+        except RuntimeError:
+            outside_humidity = previous_oh
+            logging.warning("Outside humidity sensor glitch")
+        except OverflowError as ofe:
+            outside_humidity = previous_oh
+            logging.error("Outside humidity sensor failed - " + str(ofe))
+        payload.set_outside_humidity(outside_humidity)
 
-    try:
-        inside_temp = inside_dht_sensor.temperature
-        previous_it = inside_temp
-    except RuntimeError:
-        inside_temp = previous_it
-    payload.set_inside_temp(inside_temp)
+        try:
+            inside_temp = inside_dht_sensor.temperature
+            previous_it = inside_temp
+        except RuntimeError:
+            inside_temp = previous_it
+            logging.warning("Inside temp sensor glitch")
+        except OverflowError as ofe:
+            inside_temp = previous_it
+            logging.error("Inside temp sensor failed - " + str(ofe))
+        payload.set_inside_temp(inside_temp)
 
-    try:
-        inside_humidity = inside_dht_sensor.humidity
-        previous_ih = inside_humidity
-    except RuntimeError:
-        inside_humidity = previous_ih
-    payload.set_inside_humidity(inside_humidity)
+        try:
+            inside_humidity = inside_dht_sensor.humidity
+            previous_ih = inside_humidity
+        except RuntimeError:
+            inside_humidity = previous_ih
+            logging.warning("Inside humidity sensor glitch")
+        except OverflowError as ofe:
+            inside_humidity = previous_ih
+            logging.error("Inside humidity sensor failed - " + str(ofe))
+            payload.set_inside_humidity(inside_humidity)
+    except Exception as e:
+        print(str(e))
     payload_signature = sign_payload(payload)
     return SignedObject(payload, payload_signature)
 
