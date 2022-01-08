@@ -88,7 +88,7 @@ def get_sensor_readings():
         except OverflowError as ofe:
             inside_humidity = previous_ih
             logging.error("Inside humidity sensor failed - " + str(ofe))
-            payload.set_inside_humidity(inside_humidity)
+        payload.set_inside_humidity(inside_humidity)
     except Exception as e:
         print(str(e))
     payload_signature = sign_payload(payload)
