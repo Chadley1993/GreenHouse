@@ -37,6 +37,26 @@ def sign_payload(payload):
     return signature
 
 
+def probe_dht11(dht_sensor, previous_temp, previous_humidity):
+    try:
+        temperature = dht_sensor.temperature
+        humidity = dht_sensor.humidity
+    except RuntimeError or OverflowError as err:
+        # this error occurs a lot so don't log it.
+        # No solution currently exists according to manufacturer.
+        temperature = previous_temp
+        humidity = previous_humidity
+    except OverflowError as ofe:
+        temperature = previous_temp
+        humidity = previous_humidity
+        logging.error("Inside temp sensor failed - " + str(ofe))
+    except Exception as e:
+        temperature = previous_temp
+        humidity = previous_humidity
+        print(str(e))
+    return temperature, humidity
+
+
 def get_sensor_readings():
     global previous_ot
     global previous_oh
@@ -45,52 +65,17 @@ def get_sensor_readings():
     payload = SensorData()
     ts = time.ctime()
     payload.set_timestamp(ts)
-    try:
-        try:
-            outside_temp = outside_dht_sensor.temperature
-            previous_ot = outside_temp
-        except RuntimeError:
-            outside_temp = previous_ot
-            logging.warning("Outside temp sensor glitch")
-        except OverflowError as ofe:
-            outside_temp = previous_ot
-            logging.error("Outside temp sensor failed - " + str(ofe))
-        payload.set_outside_temp(outside_temp)
 
-        try:
-            outside_humidity = outside_dht_sensor.humidity
-            previous_oh = outside_humidity
-        except RuntimeError:
-            outside_humidity = previous_oh
-            logging.warning("Outside humidity sensor glitch")
-        except OverflowError as ofe:
-            outside_humidity = previous_oh
-            logging.error("Outside humidity sensor failed - " + str(ofe))
-        payload.set_outside_humidity(outside_humidity)
+    outside_temp, outside_humidity = probe_dht11(outside_dht_sensor, previous_ot, previous_oh)
+    inside_temp, inside_humidity = probe_dht11(inside_dht_sensor, previous_it, previous_ih)
+    previous_ot, previous_oh, previous_it, previous_ih = outside_temp, outside_humidity, inside_temp, inside_humidity
 
-        try:
-            inside_temp = inside_dht_sensor.temperature
-            previous_it = inside_temp
-        except RuntimeError:
-            inside_temp = previous_it
-            logging.warning("Inside temp sensor glitch")
-        except OverflowError as ofe:
-            inside_temp = previous_it
-            logging.error("Inside temp sensor failed - " + str(ofe))
-        payload.set_inside_temp(inside_temp)
+    payload.set_outside_temp(outside_temp)
+    payload.set_outside_humidity(outside_humidity)
 
-        try:
-            inside_humidity = inside_dht_sensor.humidity
-            previous_ih = inside_humidity
-        except RuntimeError:
-            inside_humidity = previous_ih
-            logging.warning("Inside humidity sensor glitch")
-        except OverflowError as ofe:
-            inside_humidity = previous_ih
-            logging.error("Inside humidity sensor failed - " + str(ofe))
-        payload.set_inside_humidity(inside_humidity)
-    except Exception as e:
-        print(str(e))
+    payload.set_inside_temp(inside_temp)
+    payload.set_inside_humidity(inside_humidity)
+
     payload_signature = sign_payload(payload)
     return SignedObject(payload, payload_signature)
 
@@ -127,7 +112,23 @@ def get_db_connection_str():
     return "mongodb://{}:{}@{}".format(server_usr, pwd, addr)
 
 
-def save2db(packet: SensorData):
+def retry_protocol(packet: SensorData):
+    num_tries = 3
+    delay = 3 * 60
+    is_success = False
+    for i in range(1, num_tries + 1):
+        time.sleep(delay)
+        is_success = save2db(packet, retry=False, try_num=i)
+        if is_success:
+            logging.info("Reconnection to MongoDB server successful at attempt {}".format(i))
+            break
+    if not is_success:
+        f = open('lost-data.txt', 'a+')
+        f.write(str(packet.toJSON()) + "\n")
+        f.close()
+
+
+def save2db(packet: SensorData, retry, try_num=0):
     mongo_connection = get_db_connection_str()
     client = MongoClient(mongo_connection, serverSelectionTimeoutMS=5000)
     try:
@@ -135,8 +136,14 @@ def save2db(packet: SensorData):
         greenhouse_db = client["GreenHouse-v1"]
         test_collection = greenhouse_db["test"]
         test_collection.insert_one(packet.toJSON())
+        return True
     except ServerSelectionTimeoutError:
-        logging.error("MongoDB Server could not establish connection")
+        logging.error("MongoDB Server could not establish connection | try num: {}".format(try_num))
+        if retry:
+            logging.info("Reconnection thread started")
+            reconnect_thread = Thread(target=retry_protocol, args=[packet])
+            reconnect_thread.start()
+        return False
 
 
 def run_data_acquisition():
@@ -146,7 +153,7 @@ def run_data_acquisition():
         if is_time_2_store(db_freq, sample_freq):
             sampling_delay(sample_freq)
             data_packet = get_sensor_readings()
-            save2db(data_packet.get_og_object())
+            save2db(data_packet.get_og_object(), retry=True)
         sampling_delay(sample_freq)
 
 
