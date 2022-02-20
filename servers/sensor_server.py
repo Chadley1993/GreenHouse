@@ -98,6 +98,7 @@ def is_time_2_store(freq, sf):
     return time_delta <= sf * 1.5
 
 
+# TODO: refactor as same function is in 'directory-server'
 def get_address_book():
     f = open('address_book.yml', 'r')
     book = yaml.load(f, Loader=SafeLoader)
