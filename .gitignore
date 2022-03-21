@@ -1,3 +1,7 @@
 drivers/*.py
 __pycache__
 .idea
+*.log
+*.pem
+venv
+address_book.yml
