@@ -77,17 +77,17 @@ def ping_server(lower, upper, sub_addr):
 
     for i in addresses:
         try:
+            if get_address_book(2):
+                break
             data = requests.post(base_url.format(i), timeout=1, json={"ip": MYIP, "user": MY_NAME})
             reg_ip(data.json()['ip'], data.json()['user'])
             logging.info("Found " + data.json()['user'] + " at ip address: " + data.json()['ip'])
-            if get_address_book(2):
-                break
         except ConnectionError or InvalidSchema:
             logging.debug("Failed to find server at: 192.168.0." + str(i))
 
 
-def find_servers(numtry=0, num_threads=4, ip_limit=65):
-    print("Attempt number: {}".format(numtry+1))
+def find_servers(num_retries=0, num_threads=4, ip_limit=65, _try_number=0):
+    print("Attempt number: {}".format(_try_number+1))
 
     sub_addr = int(MYIP.split(".")[-1])
     threadpool = []
@@ -105,11 +105,11 @@ def find_servers(numtry=0, num_threads=4, ip_limit=65):
         for i in range(num_threads):
             threadpool[i].join()
 
-    if get_address_book(2) and numtry < 2:
+    if get_address_book(2) and num_retries > _try_number:
         spinner.stop()
-        find_servers(numtry + 1)
+        find_servers(_try_number + 1)
     
-    if numtry == 0:
+    if _try_number == 0:
         print("Search for servers complete!")
 
 
