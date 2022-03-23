@@ -1,5 +1,6 @@
 import getpass
 import socket
+from types import NoneType
 import yaml
 import requests
 import logging
@@ -42,10 +43,16 @@ def valid_signature(signature: str = ""):
 def exchange_details():
     # signature = request.args.get('signature')
     if valid_signature():
-        ip = request.json['ip']
-        user = request.json['user']
-        print(ip, user)
-        return {"user": my_server_name, "ip": MYIP}
+        if request.json is None:
+            return "request body not found"
+
+        try:
+            ip = request.json['ip']
+            user = request.json['user']
+            logging.info("Handshake request from ip address: {}, with username: {}".format(ip, user))
+            return {"user": my_server_name, "ip": MYIP}
+        except KeyError:
+            return "invalid keys"
     else:
         return "403 - Unauthorized"
 
@@ -62,7 +69,7 @@ def get_address_book(expected_entries):
 
 async def ping_server(url, i):
     try:
-        data = requests.post(url.format(i), timeout=1)
+        data = requests.post(url.format(i), timeout=1, data={"ip": MYIP, "user": my_server_name})
         reg_ip(data.json()['ip'], data.json()['user'])
         logging.info("Found " + data.json()['user'] + " at ip address: " + data.json()['ip'])
     except ConnectionError or InvalidSchema:
@@ -79,9 +86,11 @@ def find_servers(numtry=0):
         ping_server(url, i)
     
     if get_address_book(2) and numtry < 2:
+        print("Initiating another search for servers. Attempt: {}".format(numtry))
         find_servers(numtry + 1)
-    logging.info("Search for servers complete!")
-    print("Search for servers complete!")
+    
+    if numtry == 0:
+        print("Search for servers complete!")
 
 
 my_server_name = getpass.getuser()
