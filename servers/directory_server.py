@@ -68,7 +68,7 @@ def get_address_book(expected_entries):
     return num_entries < expected_entries
 
 
-async def ping_server(url, i):
+def ping_server(url, i):
     try:
         data = requests.post(url.format(i), timeout=1, json={"ip": MYIP, "user": my_server_name})
         reg_ip(data.json()['ip'], data.json()['user'])
