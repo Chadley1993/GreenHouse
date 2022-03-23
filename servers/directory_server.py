@@ -3,13 +3,13 @@ import socket
 import yaml
 import requests
 import logging
-import asyncio
 
 from threading import Thread
 from flask import Flask, request, jsonify
 from yaml import SafeLoader
 from requests.exceptions import InvalidSchema, ConnectionError
 from tqdm import tqdm
+from yaspin import yaspin
 
 app = Flask(__name__)
 
@@ -68,29 +68,46 @@ def get_address_book(expected_entries):
     return num_entries < expected_entries
 
 
-async def ping_server(url, i):
-    try:
-        data = requests.post(url.format(i), timeout=1, json={"ip": MYIP, "user": MY_NAME})
-        reg_ip(data.json()['ip'], data.json()['user'])
-        logging.info("Found " + data.json()['user'] + " at ip address: " + data.json()['ip'])
-    except ConnectionError or InvalidSchema:
-        logging.debug("Failed to find server at: 192.168.0." + str(i))
-
-
-async def find_servers(numtry=0):
-    print("Attempt number: {}".format(numtry+1))
-
-    url = "http://192.168.0.{}:8202/hello"
-    addresses = [i for i in range(1, 64)]
-    sub_addr = int(MYIP.split(".")[-1])
-    addresses.remove(sub_addr)
+def ping_server(lower, upper, sub_addr):
+    base_url = "http://192.168.0.{}:8202/hello"
+    
+    addresses = [i for i in range(lower, upper)]
+    if sub_addr in addresses:
+            addresses.remove(sub_addr)
 
     for i in addresses:
-        await ping_server(url, i)
-        if get_address_book(2):
-            break
+        try:
+            data = requests.post(base_url.format(i), timeout=1, json={"ip": MYIP, "user": MY_NAME})
+            reg_ip(data.json()['ip'], data.json()['user'])
+            logging.info("Found " + data.json()['user'] + " at ip address: " + data.json()['ip'])
+            if get_address_book(2):
+                break
+        except ConnectionError or InvalidSchema:
+            logging.debug("Failed to find server at: 192.168.0." + str(i))
+
+
+def find_servers(numtry=0, num_threads=4, ip_limit=65):
+    print("Attempt number: {}".format(numtry+1))
+
+    sub_addr = int(MYIP.split(".")[-1])
+    threadpool = []
+    poolsize = ip_limit // 4
+    pool_index = 1
+
+    with yaspin(text="Searching...", color="yellow") as spinner:
+        for _ in range(num_threads):
+            threadpool.append(Thread(target=ping_server, args=(pool_index, pool_index + poolsize, sub_addr)))
+            pool_index = pool_index + poolsize
+        
+        for i in range(num_threads):
+            threadpool[i].start()
+
+        for i in range(num_threads):
+            threadpool[i].join()
+
     if get_address_book(2) and numtry < 2:
-        await find_servers(numtry + 1)
+        spinner.stop()
+        find_servers(numtry + 1)
     
     if numtry == 0:
         print("Search for servers complete!")
@@ -105,4 +122,5 @@ if __name__ == '__main__':
     MY_NAME = getpass.getuser()
     explorer_thread = Thread(target=find_servers)
     explorer_thread.start()
-    app.run(debug=True, host="0.0.0.0", port=8202, use_reloader=False)    
+    app.run(debug=True, host="0.0.0.0", port=8202, use_reloader=False)
+    
