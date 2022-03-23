@@ -5,7 +5,7 @@ import requests
 import logging
 
 from threading import Thread
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from yaml import SafeLoader
 from requests.exceptions import InvalidSchema, ConnectionError
 from tqdm import tqdm
@@ -48,6 +48,7 @@ def exchange_details():
         try:
             ip = request.json['ip']
             user = request.json['user']
+            reg_ip(ip, user)
             logging.info("Handshake request from ip address: {}, with username: {}".format(ip, user))
             return {"user": my_server_name, "ip": MYIP}
         except KeyError:
@@ -68,7 +69,7 @@ def get_address_book(expected_entries):
 
 async def ping_server(url, i):
     try:
-        data = requests.post(url.format(i), timeout=1, data={"ip": MYIP, "user": my_server_name})
+        data = requests.post(url.format(i), timeout=1, json={"ip": MYIP, "user": my_server_name})
         reg_ip(data.json()['ip'], data.json()['user'])
         logging.info("Found " + data.json()['user'] + " at ip address: " + data.json()['ip'])
     except ConnectionError or InvalidSchema:
@@ -85,7 +86,7 @@ def find_servers(numtry=0):
         ping_server(url, i)
     
     if get_address_book(2) and numtry < 2:
-        print("Initiating another search for servers. Attempt: {}".format(numtry))
+        print("Initiating another search for servers. Attempt: {}".format(numtry + 1))
         find_servers(numtry + 1)
     
     if numtry == 0:
