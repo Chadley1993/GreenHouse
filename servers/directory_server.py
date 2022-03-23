@@ -48,6 +48,7 @@ def exchange_details():
         try:
             ip = request.json['ip']
             user = request.json['user']
+            print(ip, user)
             reg_ip(ip, user)
             logging.info("Handshake request from ip address: {}, with username: {}".format(ip, user))
             return {"user": my_server_name, "ip": MYIP}
