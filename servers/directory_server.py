@@ -48,7 +48,6 @@ def exchange_details():
         try:
             ip = request.json['ip']
             user = request.json['user']
-            print(ip, user)
             reg_ip(ip, user)
             logging.info("Handshake request from ip address: {}, with username: {}".format(ip, user))
             return {"user": my_server_name, "ip": MYIP}
@@ -68,7 +67,7 @@ def get_address_book(expected_entries):
     return num_entries < expected_entries
 
 
-def ping_server(url, i):
+async def ping_server(url, i):
     try:
         data = requests.post(url.format(i), timeout=1, json={"ip": MYIP, "user": my_server_name})
         reg_ip(data.json()['ip'], data.json()['user'])
@@ -77,15 +76,16 @@ def ping_server(url, i):
         logging.debug("Failed to find server at: 192.168.0." + str(i))
 
 
-def find_servers(numtry=0):
+async def find_servers(numtry=0):
     url = "http://192.168.0.{}:8202/hello"
     addresses = [i for i in range(1, 64)]
     sub_addr = int(MYIP.split(".")[-1])
     addresses.remove(sub_addr)
 
     for i in tqdm(addresses):
-        ping_server(url, i)
-    
+        await ping_server(url, i)
+        if get_address_book(2):
+            break
     if get_address_book(2) and numtry < 2:
         print("Initiating another search for servers. Attempt: {}".format(numtry + 1))
         find_servers(numtry + 1)
