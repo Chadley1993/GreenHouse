@@ -1,6 +1,5 @@
 import getpass
 import socket
-from types import NoneType
 import yaml
 import requests
 import logging
