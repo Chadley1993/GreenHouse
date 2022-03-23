@@ -65,7 +65,7 @@ def get_address_book(expected_entries):
     f.close()
     num_entries = len(book)
     logging.info("Found [" + str(num_entries) + "] entries in address_book.yml")
-    return num_entries < expected_entries
+    return num_entries >= expected_entries
 
 
 def ping_server(lower, upper, sub_addr):
