@@ -100,15 +100,9 @@ log_fmt = '%(asctime)s : %(levelname)s - %(message)s'
 logging.basicConfig(filename='directory.log', filemode='w', format=log_fmt, level=logging.DEBUG)
 
 
-async def main():
-    await find_servers()
-    app.run(debug=True, host="0.0.0.0", port=8202, use_reloader=False)
-
-
 if __name__ == '__main__':
     MYIP = get_myip()
     MY_NAME = getpass.getuser()
-    # explorer_thread = Thread(target=find_servers)
-    # explorer_thread.start()
-    asyncio.run(main())
-    
+    explorer_thread = Thread(target=find_servers)
+    explorer_thread.start()
+    app.run(debug=True, host="0.0.0.0", port=8202, use_reloader=False)    
