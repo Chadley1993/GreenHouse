@@ -3,6 +3,7 @@ import socket
 import yaml
 import requests
 import logging
+import asyncio
 
 from threading import Thread
 from flask import Flask, request, jsonify
@@ -50,7 +51,7 @@ def exchange_details():
             user = request.json['user']
             reg_ip(ip, user)
             logging.info("Handshake request from ip address: {}, with username: {}".format(ip, user))
-            return {"user": my_server_name, "ip": MYIP}
+            return {"user": MY_NAME, "ip": MYIP}
         except KeyError:
             return "invalid keys"
     else:
@@ -69,7 +70,7 @@ def get_address_book(expected_entries):
 
 async def ping_server(url, i):
     try:
-        data = requests.post(url.format(i), timeout=1, json={"ip": MYIP, "user": my_server_name})
+        data = requests.post(url.format(i), timeout=1, json={"ip": MYIP, "user": MY_NAME})
         reg_ip(data.json()['ip'], data.json()['user'])
         logging.info("Found " + data.json()['user'] + " at ip address: " + data.json()['ip'])
     except ConnectionError or InvalidSchema:
@@ -77,30 +78,37 @@ async def ping_server(url, i):
 
 
 async def find_servers(numtry=0):
+    print("Attempt number: {}".format(numtry+1))
+
     url = "http://192.168.0.{}:8202/hello"
     addresses = [i for i in range(1, 64)]
     sub_addr = int(MYIP.split(".")[-1])
     addresses.remove(sub_addr)
 
-    for i in tqdm(addresses):
+    for i in addresses:
         await ping_server(url, i)
         if get_address_book(2):
             break
     if get_address_book(2) and numtry < 2:
-        print("Initiating another search for servers. Attempt: {}".format(numtry + 1))
-        find_servers(numtry + 1)
+        await find_servers(numtry + 1)
     
     if numtry == 0:
         print("Search for servers complete!")
 
 
-my_server_name = getpass.getuser()
-
 log_fmt = '%(asctime)s : %(levelname)s - %(message)s'
 logging.basicConfig(filename='directory.log', filemode='w', format=log_fmt, level=logging.DEBUG)
 
+
+async def main():
+    await find_servers()
+    app.run(debug=True, host="0.0.0.0", port=8202, use_reloader=False)
+
+
 if __name__ == '__main__':
     MYIP = get_myip()
-    explorer_thread = Thread(target=find_servers)
-    explorer_thread.start()
-    app.run(debug=True, host="0.0.0.0", port=8202, use_reloader=False)
+    MY_NAME = getpass.getuser()
+    # explorer_thread = Thread(target=find_servers)
+    # explorer_thread.start()
+    asyncio.run(main())
+    
