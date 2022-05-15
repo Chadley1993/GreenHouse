@@ -1,5 +1,4 @@
 import time
-import datetime
 
 from drivers import bmp280
 
