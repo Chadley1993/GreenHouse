@@ -67,16 +67,8 @@ app.layout = html.Div(children=[
                 html.Div([
                 html.Table([
                     html.Tbody([
-                        # html.Th(
-                        #     [
-                        #         html.Td("Alarm", style={"paddingTop": "1px", "paddingBottom": "1px", "flex": "1"}), 
-                        #         html.Td("Description", style={"paddingTop": "1px", "paddingBottom": "1px", "flex": "2"}),
-                        #         html.Td("Time", style={"paddingTop": "1px", "paddingBottom": "1px", "flex": "1"})
-                        #     ], 
-                        #     style={"width": "100%", "display": "flex"}
-                        # ),
-                        html.Th(html.Td("Time", style={"border": "none", "paddingTop": "1px", "paddingBottom": "1px"})),
-                        html.Th(html.Td("Description", style={"border": "none", "paddingTop": "1px", "paddingBottom": "1px"})),
+                        html.Th("Time", style={"border": "none", "padding": "1px", "color": "aliceblue"}),
+                        html.Th("Description", style={"border": "none", "padding": "1px", "color": "aliceblue"}),
                         html.Tr([html.Td("y", style={"border": "", "paddingTop": "1px", "paddingBottom": "1px"}), html.Td("30000", style={"paddingTop": "1px", "paddingBottom": "1px"})]),
                     ])
                 ],
@@ -112,7 +104,7 @@ app.layout = html.Div(children=[
             ], style={'display': 'flex', 'flex': '65', 'background': 'aqua', 'borderStyle': 'outset', 'maxHeight': '75%'}),
             
             html.Div(
-                ghc.get_forecast(), 
+                ghc.get_forecast(),
                 style={'display': 'flex', 'flex': '35', 'background': 'darkred', 'borderStyle': 'outset'}
             )
         ],
@@ -226,4 +218,4 @@ if __name__ == '__main__':
     else:
         addr_book = get_address_book()
         rpi_addr = addr_book['rpi_server']
-        app.run_server(debug=True, use_reloader=False, host="0.0.0.0")
+        app.run_server(debug=False, use_reloader=False, host="0.0.0.0")

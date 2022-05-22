@@ -179,6 +179,9 @@ def get_forecast():
     start_index = datetime.datetime.today().weekday()
     day_of_week_ordered = day_of_week[start_index:] + day_of_week[:start_index]
     data = get_weather_data()
+    if len(data) == 0:
+        return html.Div("Weather service not available.", style={"fontSize": "24px", "backgroundColor": "#0d6efd", "flex": "1", "textAlign": "center", "padding": "auto", "height": "100%"})
+
     for index in range(7):
         day_div = html.Div(day_of_week_ordered[index], style={'flex':'1', 'textAlign': 'center', 'width': '100%'})
         
