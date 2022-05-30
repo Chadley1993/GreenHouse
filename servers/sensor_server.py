@@ -225,7 +225,7 @@ data_packet = None
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--aws', action='store_const', const=True, help='Use aws DynamoDB to store data')
-use_aws = parser.parse_args()
+use_aws = parser.parse_args().aws
 
 if __name__ == "__main__":
     ss_thread = Thread(target=run_server)
