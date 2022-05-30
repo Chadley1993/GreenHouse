@@ -169,7 +169,7 @@ def save2awsDB(sensorData: SensorData):
 
 def backup_data(data):
     f = open("sensor_backup.json", "a")
-    f.write(json.dumps(data) + "\n")
+    f.write(json.dumps(data.toJSON()) + "\n")
     f.close()
 
 
