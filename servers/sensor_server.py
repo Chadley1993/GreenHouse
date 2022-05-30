@@ -173,20 +173,20 @@ def backup_data(data):
     f.close()
 
 
-def run_data_acquisition(use_mongo=True):
+def run_data_acquisition(use_aws=False):
     global data_packet
     while True:
         data_packet = get_sensor_readings()
         if is_time_2_store(db_freq, sample_freq):
             sampling_delay(sample_freq)
             data_packet = get_sensor_readings()
-            if use_mongo:
-                save2db(data_packet.get_og_object(), retry=True)
-            else:
+            if use_aws:
                 try:
                     save2awsDB(data_packet.get_og_object())
                 except:
-                    backup_data(data_packet.get_og_object())
+                    backup_data(data_packet.get_og_object())                
+            else:
+                save2db(data_packet.get_og_object(), retry=True)
         sampling_delay(sample_freq)
 
 
