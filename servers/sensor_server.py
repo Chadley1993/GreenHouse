@@ -208,7 +208,6 @@ server_socket.bind(("", SSSConstants.port))
 server_socket.listen(SSSConstants.num_expect_conn)
 
 private_key = get_pk()
-address_book = get_address_book()
 
 inside_dht_sensor = adafruit_dht.DHT11(17)
 outside_dht_sensor = adafruit_dht.DHT11(18)
@@ -226,6 +225,8 @@ data_packet = None
 parser = argparse.ArgumentParser()
 parser.add_argument('--aws', action='store_const', const=True, help='Use aws DynamoDB to store data')
 use_aws = parser.parse_args().aws
+if not use_aws:
+    address_book = get_address_book()
 
 if __name__ == "__main__":
     ss_thread = Thread(target=run_server)
