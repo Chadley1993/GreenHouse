@@ -230,7 +230,7 @@ if not use_aws:
 
 if __name__ == "__main__":
     ss_thread = Thread(target=run_server)
-    da_thread = Thread(target=run_data_acquisition, args=use_aws)
+    da_thread = Thread(target=run_data_acquisition, args=[use_aws])
     ss_thread.start()
     da_thread.start()
     print("Server started")
