@@ -157,12 +157,7 @@ def save2db(packet: SensorData, retry, try_num=0):
 
 
 def save2awsDB(data):
-    dynamodb = boto3.resource(
-<<<<<<< HEAD
-        'dynamodb', aws_access_key_id=os.getenv["AWS_ACCESS_KEY"], aws_secret_access_key=os.getenv["AWS_SECRET_KEY"], region_name="us-east-1")
-=======
-        'dynamodb', aws_access_key_id=os.getenv["ACCESS_KEY"], aws_secret_access_key=os.getenv["AWS_SECRET_KEY"], region_name="us-east-1")
->>>>>>> 5cd680a3ac0e8b5f5ce89942a5c68edd91593ffc
+    dynamodb = boto3.resource('dynamodb', aws_access_key_id=os.getenv["AWS_ACCESS_KEY"], aws_secret_access_key=os.getenv["AWS_SECRET_KEY"], region_name="us-east-1")
     table = dynamodb.Table("Dev1")
     response = table.put_item(Item=data)
     if response["HTTPStatusCode"] != 200:
