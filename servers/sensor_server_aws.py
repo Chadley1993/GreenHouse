@@ -2,13 +2,9 @@ import os
 import socket
 import pickle
 import time
-from urllib import response
 import numpy as np
 import yaml
 import logging
-import argparse
-import boto3
-import json
 
 from threading import Thread
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -23,8 +19,7 @@ import adafruit_dht
 
 def get_pk():
     f = open("rpi-data-server.pem", 'rb')
-    pk = serialization.load_pem_private_key(
-        f.read(), password=bytes(os.environ['RPI_SERVER_PWD'], 'utf-8'))
+    pk = serialization.load_pem_private_key(f.read(), password=bytes(os.environ['RPI_SERVER_PWD'], 'utf-8'))
     f.close()
     return pk
 
@@ -71,10 +66,8 @@ def get_sensor_readings():
     ts = time.ctime()
     payload.set_timestamp(ts)
 
-    outside_temp, outside_humidity = probe_dht11(
-        outside_dht_sensor, previous_ot, previous_oh)
-    inside_temp, inside_humidity = probe_dht11(
-        inside_dht_sensor, previous_it, previous_ih)
+    outside_temp, outside_humidity = probe_dht11(outside_dht_sensor, previous_ot, previous_oh)
+    inside_temp, inside_humidity = probe_dht11(inside_dht_sensor, previous_it, previous_ih)
     previous_ot, previous_oh, previous_it, previous_ih = outside_temp, outside_humidity, inside_temp, inside_humidity
 
     payload.set_outside_temp(outside_temp)
@@ -128,8 +121,7 @@ def retry_protocol(packet: SensorData):
         time.sleep(delay)
         is_success = save2db(packet, retry=False, try_num=i)
         if is_success:
-            logging.info(
-                "Reconnection to MongoDB server successful at attempt {}".format(i))
+            logging.info("Reconnection to MongoDB server successful at attempt {}".format(i))
             break
     if not is_success:
         f = open('lost-data.txt', 'a+')
@@ -147,8 +139,7 @@ def save2db(packet: SensorData, retry, try_num=0):
         test_collection.insert_one(packet.toJSON())
         return True
     except ServerSelectionTimeoutError:
-        logging.error(
-            "MongoDB Server could not establish connection | try num: {}".format(try_num))
+        logging.error("MongoDB Server could not establish connection | try num: {}".format(try_num))
         if retry:
             logging.info("Reconnection thread started")
             reconnect_thread = Thread(target=retry_protocol, args=[packet])
@@ -156,36 +147,14 @@ def save2db(packet: SensorData, retry, try_num=0):
         return False
 
 
-def save2awsDB(data):
-    dynamodb = boto3.resource(
-        'dynamodb', aws_access_key_id="ACCESS_KEY", aws_secret_access_key="SECRET_KEY")
-    table = dynamodb.Table("Dev1")
-    response = table.put_item(Item=data)
-    if response["HTTPStatusCode"] != 200:
-        logging.error("Save to database failed \n" + str(response))
-        raise Exception("database failed")
-
-
-def backup_data(data):
-    f = open("sensor_backup.json", "a")
-    f.write(json.dumps(data) + "\n")
-    f.close()
-
-
-def run_data_acquisition(use_mongo=True):
+def run_data_acquisition():
     global data_packet
     while True:
         data_packet = get_sensor_readings()
         if is_time_2_store(db_freq, sample_freq):
             sampling_delay(sample_freq)
             data_packet = get_sensor_readings()
-            if use_mongo:
-                save2db(data_packet.get_og_object(), retry=True)
-            else:
-                try:
-                    save2awsDB(data_packet.get_og_object())
-                except:
-                    backup_data(data_packet.get_og_object())
+            save2db(data_packet.get_og_object(), retry=True)
         sampling_delay(sample_freq)
 
 
@@ -199,8 +168,7 @@ def run_server():
 
 
 log_fmt = '%(asctime)s : %(levelname)s - %(message)s'
-logging.basicConfig(filename='rpi-sensors.log', filemode='w',
-                    format=log_fmt, level=logging.INFO)
+logging.basicConfig(filename='rpi-sensors.log', filemode='w', format=log_fmt, level=logging.INFO)
 
 server_socket = socket.socket()
 server_socket.bind(("", SSSConstants.port))
@@ -222,13 +190,8 @@ previous_ih = 0
 
 data_packet = None
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--aws', action='store_const', const=True,
-                    help='Use aws DynamoDB to store data')
-use_aws = parser.parse_args()
-
 if __name__ == "__main__":
     ss_thread = Thread(target=run_server)
-    da_thread = Thread(target=run_data_acquisition, args=use_aws)
+    da_thread = Thread(target=run_data_acquisition)
     ss_thread.start()
     da_thread.start()
