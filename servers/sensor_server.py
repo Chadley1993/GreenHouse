@@ -161,7 +161,7 @@ def save2db(packet: SensorData, retry, try_num=0):
 def save2awsDB(sensorData: SensorData):
     dynamodb = boto3.resource('dynamodb', aws_access_key_id=os.getenv("AWS_ACCESS_KEY"), aws_secret_access_key=os.getenv("AWS_SECRET_KEY"), region_name="us-east-1")
     table = dynamodb.Table("Dev1")
-    response = table.put_item(Item={'time_stamp': sensorData.get_timestamp(), 'type': 'live-test', 'data': sensorData})
+    response = table.put_item(Item={'time_stamp': sensorData.get_timestamp(), 'type': 'live-test', 'data': sensorData.toJSON()})
     if response["HTTPStatusCode"] != 200:
         logging.error("Save to database failed \n" + str(response))
         raise Exception("database failed")
