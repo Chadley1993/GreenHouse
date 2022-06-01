@@ -169,7 +169,7 @@ def save2awsDB(sensorData: SensorData):
         else:
             return True
     except Exception as ex:
-        logging.info("Database upload failed, retrying to upload data." + str(ex))
+        logging.info("Database upload failed, retrying to upload data." + ex)
         return False
         # if retry:
         #     logging.info("Reconnection thread started")
