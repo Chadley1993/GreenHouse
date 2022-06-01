@@ -166,14 +166,11 @@ def save2awsDB(sensorData: SensorData, retry, try_num=0):
         table = dynamodb.Table("Dev1")
         response = table.put_item(Item={'time_stamp': sensorData.get_timestamp(), 'type': 'live-test', 'data': sensorData.toJSON()})
         print(response)
-        try:
-            if response["HTTPStatusCode"] != 200:
-                logging.error("Save to database failed \n" + str(response))
-                raise Exception("")
-            else:
-                return True
-        except KeyError:
-            print("Whats happening! ", response)
+        if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
+            logging.error("Save to database failed \n" + str(response))
+            raise Exception("")
+        else:
+            return True
 
     except Exception as ex:
         logging.info("Database upload failed, retrying to upload data." + str(ex))
