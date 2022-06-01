@@ -128,10 +128,10 @@ def retry_protocol(packet: SensorData):
     is_success = False
     for i in range(1, num_tries + 1):
         time.sleep(delay)
-        is_success = save2db(packet, retry=False, try_num=i)
+        is_success = save2awsDB(packet, retry=False, try_num=i)
         if is_success:
             logging.info(
-                "Reconnection to MongoDB server successful at attempt {}".format(i))
+                "Reconnection to AWS DynamoDB successful at attempt {}".format(i))
             break
     if not is_success:
         f = open('lost-data.txt', 'a+')
@@ -158,7 +158,7 @@ def save2db(packet: SensorData, retry, try_num=0):
         return False
 
 
-def save2awsDB(sensorData: SensorData):
+def save2awsDB(sensorData: SensorData, retry, try_num=0):
     try:
         dynamodb = boto3.resource('dynamodb', aws_access_key_id=os.getenv("AWS_ACCESS_KEY"), aws_secret_access_key=os.getenv("AWS_SECRET_KEY"), region_name="us-east-1")
         table = dynamodb.Table("Dev1")
@@ -170,11 +170,11 @@ def save2awsDB(sensorData: SensorData):
             return True
     except Exception as ex:
         logging.info("Database upload failed, retrying to upload data." + ex)
+        if retry:
+            logging.info("Reconnection thread started")
+            reconnect_thread = Thread(target=retry_protocol, args=[sensorData])
+            reconnect_thread.start()
         return False
-        # if retry:
-        #     logging.info("Reconnection thread started")
-        #     reconnect_thread = Thread(target=retry_protocol, args=[packet])
-        #     reconnect_thread.start()
 
 
 def backup_data(data):
@@ -191,7 +191,7 @@ def run_data_acquisition(use_aws=False):
             sampling_delay(sample_freq)
             data_packet = get_sensor_readings()
             if use_aws:
-                if not save2awsDB(data_packet.get_og_object()):
+                if not save2awsDB(data_packet.get_og_object(), retry=True):
                     backup_data(data_packet.get_og_object())                
             else:
                 save2db(data_packet.get_og_object(), retry=True)
