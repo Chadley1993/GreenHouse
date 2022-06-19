@@ -13,6 +13,20 @@ class SensorData:
         self.inside_temp = None
         self.inside_humidity = None
         self.timestamp = None
+        self.comp_temp = None
+        self.comp_humidty = None
+    
+    def set_comp_temp(self, x):
+        self.comp_temp = x
+
+    def get_comp_temp(self):
+        return self.comp_temp
+    
+    def set_comp_humidity(self, x):
+        self.set_comp_humidity = x
+
+    def get_comp_humidity(self):
+        return self.comp_humidity
 
     def set_outside_temp(self, x):
         self.outside_temp = x

@@ -69,6 +69,8 @@ def get_sensor_readings():
     global previous_oh
     global previous_it
     global previous_ih
+    global previous_comp_temp
+    global previous_comp_hum
     payload = SensorData()
     ts = time.ctime()
     payload.set_timestamp(ts)
@@ -77,13 +79,20 @@ def get_sensor_readings():
         outside_dht_sensor, previous_ot, previous_oh)
     inside_temp, inside_humidity = probe_dht11(
         inside_dht_sensor, previous_it, previous_ih)
+    computer_temp, computer_humidity = probe_dht11(
+        computer_dht_sensor, previous_comp_temp, previous_comp_hum)
+    
     previous_ot, previous_oh, previous_it, previous_ih = outside_temp, outside_humidity, inside_temp, inside_humidity
-
+    previous_comp_temp, previous_comp_hum = computer_temp, computer_humidity
+    
     payload.set_outside_temp(outside_temp)
     payload.set_outside_humidity(outside_humidity)
 
     payload.set_inside_temp(inside_temp)
     payload.set_inside_humidity(inside_humidity)
+
+    payload.set_comp_temp(computer_temp)
+    payload.set_comp_humidity(computer_humidity)
 
     payload_signature = sign_payload(payload)
     return SignedObject(payload, payload_signature)
@@ -222,6 +231,7 @@ private_key = get_pk()
 
 inside_dht_sensor = adafruit_dht.DHT11(17)
 outside_dht_sensor = adafruit_dht.DHT11(18)
+computer_dht_sensor = adafruit_dht.DHT11(22)
 
 db_freq = 15 * 60
 sample_freq = 6
@@ -230,6 +240,8 @@ previous_ot = 0
 previous_oh = 0
 previous_it = 0
 previous_ih = 0
+previous_comp_temp = 0
+previous_comp_hum = 0
 
 data_packet = None
 
