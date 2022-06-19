@@ -14,7 +14,7 @@ class SensorData:
         self.inside_humidity = None
         self.timestamp = None
         self.comp_temp = None
-        self.comp_humidty = None
+        self.comp_humidity = None
     
     def set_comp_temp(self, x):
         self.comp_temp = x
