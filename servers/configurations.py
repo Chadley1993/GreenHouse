@@ -23,7 +23,7 @@ class SensorData:
         return self.comp_temp
     
     def set_comp_humidity(self, x):
-        self.set_comp_humidity = x
+        self.comp_humidity = x
 
     def get_comp_humidity(self):
         return self.comp_humidity
